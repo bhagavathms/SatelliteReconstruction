@@ -29,6 +29,16 @@ This contributes to the evaluation of techniques used for **vegetation dynamics 
 
 ## 🚀 How to Run
 
+Clone First and setup Virtual Environment
+```bash
+git clone https://github.com/bhagavathms/SatelliteReconstruction.git
+cd SatelliteReconstruction
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Generate Synthetic Data
 ```bash
 cd notebooks/Data
 python make_synthetic_realistic.py
@@ -54,13 +64,4 @@ cd ../Comparison
 python compare_scatter.py
 python compare_temporal.py
 python compare_mse.py
-```
-
-If cloning
-```bss
-git clone https://github.com/bhagavathms/SatelliteReconstruction.git
-cd SatelliteReconstruction
-python3.10 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
 ```
