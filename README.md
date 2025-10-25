@@ -32,6 +32,7 @@ This contributes to the evaluation of techniques used for **vegetation dynamics 
 ```bash
 cd notebooks/Data
 python make_synthetic_realistic.py
+```
 This generates:
 data/original.npy
 data/gapped.npy
@@ -39,15 +40,27 @@ data/dates.npy
 
 
 Run all reconstruction methods
+```bash
 cd ../DTS        && python run_dts.py
 cd ../Cubic      && python run_cubic.py
 cd ../LOWESS     && python run_lowess.py
 cd ../SG         && python run_sg.py
 cd ../Whittaker  && python run_whittaker.py
-
+```
 
 Run visual comparisons
+```bash
 cd ../Comparison
 python compare_scatter.py
 python compare_temporal.py
 python compare_mse.py
+```
+
+If cloning
+```bss
+git clone https://github.com/bhagavathms/SatelliteReconstruction.git
+cd SatelliteReconstruction
+python3.10 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
