@@ -32,7 +32,6 @@ This contributes to the evaluation of techniques used for **vegetation dynamics 
 ```bash
 cd notebooks/Data
 python make_synthetic_realistic.py
-
 This generates:
 data/original.npy
 data/gapped.npy
@@ -52,5 +51,3 @@ cd ../Comparison
 python compare_scatter.py
 python compare_temporal.py
 python compare_mse.py
-## 📂 Project Structure
-
