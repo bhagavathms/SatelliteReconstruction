@@ -23,36 +23,17 @@ Reconstruct missing satellite observations (ex: due to clouds) and analyze:
 This contributes to the evaluation of techniques used for **vegetation dynamics monitoring** such as NDVI/EVI2 over croplands.
 
 ---
-
-SatelliteReconstruction
-│
-├── notebooks
-│ ├── Data/ → Synthetic dataset creation
-│ ├── DTS/ → DTS reconstruction + plots
-│ ├── Cubic/
-│ ├── LOWESS/
-│ ├── SG/
-│ ├── Whittaker/
-│ └── Comparison/ → Scatter, temporal & error metrics
-│
-├── requirements.txt
-└── .gitignore
-
-
-
 ⚠️ `data/` and `results/` are not stored in GitHub (auto-generated)
 
 ---
 
 ## 🚀 How to Run
 
-### 1️⃣ Create synthetic dataset
 ```bash
 cd notebooks/Data
 python make_synthetic_realistic.py
 
 This generates:
-
 data/original.npy
 data/gapped.npy
 data/dates.npy
