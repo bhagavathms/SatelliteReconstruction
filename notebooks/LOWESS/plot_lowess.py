@@ -14,12 +14,12 @@ r, c = 50, 50
 T = y_original.shape[0]
 
 plt.figure(figsize=(10,5))
-plt.plot(y_original[:, r, c], "g-", label="Original (True)")
-plt.plot(y_gap[:, r, c], "bo", label="Gapped Input")
+plt.plot(y_original[:, r, c], "g-", label="Original")
+plt.plot(y_gap[:, r, c], "bo", label="Gaps")
 plt.plot(y_lowess[:T, r, c], "r-", label="LOWESS")
 
-plt.title(f"LOWESS Reconstruction Validation — Pixel ({r},{c})")
-plt.xlabel("Time Index")
+plt.title(f"LOWESS Reconstruction")
+plt.xlabel("Time")
 plt.ylabel("EVI2")
 plt.grid(True)
 plt.legend()

@@ -13,13 +13,13 @@ T = y_original.shape[0]  # Trim in case sizes differ
 
 plt.figure(figsize=(10, 5))
 
-plt.plot(y_original[:, r, c], "g-", label="Original (True)")
-plt.plot(y_gap[:, r, c], "bo", markersize=4, label="Gapped Input")
+plt.plot(y_original[:, r, c], "g-", label="Original")
+plt.plot(y_gap[:, r, c], "bo", markersize=4, label="Gaps")
 plt.plot(y_whitt[:T, r, c], "m-", label="Whittaker")
 
-plt.title("Whittaker Reconstruction Validation — Pixel (50,50)")
-plt.xlabel("Time Index")
-plt.ylabel("NDVI-like Value")
+plt.title("Whittaker Reconstruction")
+plt.xlabel("Time")
+plt.ylabel("EVI2")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

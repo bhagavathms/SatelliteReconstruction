@@ -10,12 +10,12 @@ rec = np.load('../../results/Cubic/recon.npy')
 r, c = 50, 50  # same pixel as DTS for consistent comparison
 
 plt.figure(figsize=(10,5))
-plt.plot(orig[:,r,c], 'g-', label='Original EVI2')
-plt.plot(gap[:,r,c], 'bo', label='Gapped Input')
-plt.plot(rec[:,r,c], 'r-', label='Cubic Spline Reconstruction')
+plt.plot(orig[:,r,c], 'y-', label='Original EVI2')
+plt.plot(gap[:,r,c], 'bo', label='Gaps')
+plt.plot(rec[:,r,c], 'g-', label='Cubic Spline Reconstruction')
 
-plt.title("Cubic Spline Reconstruction - Pixel (50,50)")
-plt.xlabel("Time Index")
+plt.title("Cubic Spline Reconstruction")
+plt.xlabel("Time")
 plt.ylabel("EVI2 Value")
 plt.grid(True)
 plt.legend()

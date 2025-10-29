@@ -8,23 +8,40 @@ orig = np.load('../../data/original.npy')
 gap = np.load('../../data/gapped.npy')
 
 T, H, W = gap.shape
-rec = np.zeros_like(orig)
+rec = np.full_like(orig, np.nan)  # start with NaN
 
-print("⏳ Running Cubic Spline...")
+print("⏳ Running Improved Cubic Spline...")
+
+x = np.arange(T)
 
 for i in range(H):
     for j in range(W):
         y = gap[:, i, j]
-        x = np.arange(T)
-
         valid = ~np.isnan(y)
+
+        # Must have at least 4 valid points
         if valid.sum() < 4:
-            rec[:, i, j] = np.nan  # not enough points
             continue
 
-        spline = CubicSpline(x[valid], y[valid])
-        rec[:, i, j] = spline(x)
+        xv = x[valid]
+        yv = y[valid]
+
+        try:
+            # ✅ Cubic only inside data range
+            cubic = CubicSpline(xv, yv, extrapolate=False)
+            yc = cubic(x)
+
+            # ✅ Linear fallback for extrapolation edges
+            if np.isnan(yc).any():
+                lin = np.interp(x, xv, yv)
+                yc = np.where(np.isnan(yc), lin, yc)
+
+            # ✅ Clip physically valid reflectance
+            rec[:, i, j] = np.clip(yc, 0, 1)
+
+        except:
+            continue  # Skip if curve fails
 
 np.save('../../results/Cubic/recon.npy', rec)
-print("✅ Cubic Spline Reconstruction saved!")
+print("✅ Improved Cubic Reconstruction saved!")
 print("Output shape:", rec.shape)

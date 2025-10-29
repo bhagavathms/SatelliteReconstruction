@@ -13,12 +13,12 @@ T = y_original.shape[0]
 
 plt.figure(figsize=(10,5))
 plt.plot(y_original[:, r, c], "g-", label="Original")
-plt.plot(y_gap[:, r, c], "bo", label="Gapped")
+plt.plot(y_gap[:, r, c], "bo", label="Gaps")
 plt.plot(y_sg[:T, r, c], "r-", label="SG")
 
-plt.title("Savitzky–Golay Reconstruction — Pixel (50,50)")
-plt.xlabel("Time Index")
-plt.ylabel("Value")
+plt.title("Savitzky–Golay Reconstruction")
+plt.xlabel("Time")
+plt.ylabel("EVI2")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
