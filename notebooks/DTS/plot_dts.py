@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-y_original = np.load("../../data/original.npy")
-y_gap = np.load("../../data/gapped.npy")
-y_dts = np.load("../../results/DTS/recon.npy")
+y_original = np.load("../../data/original_h.npy")
+y_gap = np.load("../../data/gapped_h.npy")
+y_dts = np.load("../../results/DTS/recon_h.npy")
 
-r, c = 50, 50
+r, c = 25, 30
 T = y_original.shape[0]
 
 plt.figure(figsize=(10,5))
@@ -20,7 +20,7 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 
-save_path = "../../results/DTS/dts1.png"
+save_path = "../../results/DTS/dts_h.png"
 plt.savefig(save_path, dpi=300)
 plt.show()
 

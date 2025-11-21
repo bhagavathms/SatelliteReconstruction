@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import os
 
 # Load required data
-y_original = np.load("../../data/original.npy")
-y_gap = np.load("../../data/gapped.npy")
-y_whitt = np.load("../../results/Whittaker/recon.npy")
+y_original = np.load("../../data/original_h.npy")
+y_gap = np.load("../../data/gapped_h.npy")
+y_whitt = np.load("../../results/Whittaker/recon_h.npy")
 
 # Pick a pixel for validation
-r, c = 50, 50
+r, c = 25, 30
 T = y_original.shape[0]  # Trim in case sizes differ
 
 plt.figure(figsize=(10, 5))
@@ -24,7 +24,7 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 
-save_path = "../../results/Whittaker/whitt.png"
+save_path = "../../results/Whittaker/whitt_h.png"
 plt.savefig(save_path, dpi=300)
 plt.show()
 

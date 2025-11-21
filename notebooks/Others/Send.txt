@@ -1,0 +1,213 @@
+make_gan_dataset.py
+# make_gan_dataset.py (v2)
+import numpy as np, os, json
+from sklearn.model_selection import train_test_split
+
+# Inputs (from Stage-1 synthetic)
+Y_FULL = "../../data/original.npy"  # (T,H,W)
+Y_GAP  = "../../data/gapped.npy"    # (T,H,W)
+OUT    = "../../data/gan_dataset"
+os.makedirs(OUT, exist_ok=True)
+
+# ---- Load
+y_full = np.load(Y_FULL).astype(np.float32)  # (T,H,W)
+y_gap  = np.load(Y_GAP ).astype(np.float32)
+T,H,W  = y_full.shape
+
+# ---- Flatten to per-pixel series: (Npix, T)
+X = y_gap.transpose(1,2,0).reshape(H*W, T)    # gapped inputs
+Y = y_full.transpose(1,2,0).reshape(H*W, T)   # full targets
+
+# ---- Valid mask & keep mask for potential GAN conditioning
+valid_counts = np.isfinite(X).sum(axis=1)
+keep = valid_counts > int(0.5 * T)            # a bit stricter than 0.4
+X_mask = np.isfinite(X[keep]).astype(np.float32)
+
+# ---- Fill NaNs with 0 after saving mask
+X = np.nan_to_num(X[keep], nan=0.0)
+Y = np.nan_to_num(Y[keep], nan=0.0)
+
+# ---- Optional normalization (commented for synthetic)
+# # Per-series min-max (robust for varied scales)
+# eps = 1e-6
+# x_min = X.min(axis=1, keepdims=True)
+# x_max = X.max(axis=1, keepdims=True)
+# X = (X - x_min) / (x_max - x_min + eps)
+# y_min = Y.min(axis=1, keepdims=True)
+# y_max = Y.max(axis=1, keepdims=True)
+# Y = (Y - y_min) / (y_max - y_min + eps)
+
+# ---- Subsample to keep training light
+N = min(12000, X.shape[0])
+rng = np.random.default_rng(42)
+idx = rng.choice(X.shape[0], size=N, replace=False)
+X, Y, X_mask = X[idx], Y[idx], X_mask[idx]
+
+# ---- Train/val split
+Xtr, Xva, Ytr, Yva = train_test_split(X, Y, test_size=0.15, random_state=42)
+Mtr, Mva = train_test_split(X_mask, test_size=0.15, random_state=42)
+
+# ---- Save arrays
+np.save(f"{OUT}/X_train.npy", Xtr)
+np.save(f"{OUT}/Y_train.npy", Ytr)
+np.save(f"{OUT}/X_val.npy",   Xva)
+np.save(f"{OUT}/Y_val.npy",   Yva)
+np.save(f"{OUT}/M_train.npy", Mtr)   # masks (optional input to GAN)
+np.save(f"{OUT}/M_val.npy",   Mva)
+
+# ---- Save metadata: shapes & the pixel indices used
+meta = {
+    "T": int(T), "H": int(H), "W": int(W),
+    "N_after_filter": int(X.shape[0] + Xva.shape[0]),  # before split
+    "train_size": int(Xtr.shape[0]),
+    "val_size": int(Xva.shape[0]),
+    "note": "Values are float32; NaNs in X replaced with 0. Mask arrays mark valid(1)/gap(0)."
+}
+with open(f"{OUT}/meta.json", "w") as f:
+    json.dump(meta, f, indent=2)
+
+print("✅ GAN dataset saved in", OUT,
+      "| shapes:",
+      Xtr.shape, Ytr.shape, Xva.shape, Yva.shape,
+      "| masks:", Mtr.shape, Mva.shape)
+
+
+
+
+
+
+
+run_gan.py
+import os, numpy as np, torch, torch.nn as nn
+from torch.utils.data import TensorDataset, DataLoader
+from tqdm import tqdm
+
+DATADIR = "../../data/gan_dataset"
+OUTDIR  = "../../results/GAN"; os.makedirs(OUTDIR, exist_ok=True)
+
+# --- Tiny 1D GAN (temporal only) ---
+class Gen(nn.Module):
+    def __init__(self, T):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(T, 256), nn.ReLU(),
+            nn.Linear(256, 256), nn.ReLU(),
+            nn.Linear(256, T)
+        )
+    def forward(self, x): return self.net(x)
+
+class Disc(nn.Module):
+    def __init__(self, T):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(T, 256), nn.LeakyReLU(0.2),
+            nn.Linear(256, 128), nn.LeakyReLU(0.2),
+            nn.Linear(128, 1)
+        )
+    def forward(self, x): return self.net(x)
+
+# Load train/val
+Xtr = np.load(f"{DATADIR}/X_train.npy").astype("float32")
+Ytr = np.load(f"{DATADIR}/Y_train.npy").astype("float32")
+Xva = np.load(f"{DATADIR}/X_val.npy").astype("float32")
+Yva = np.load(f"{DATADIR}/Y_val.npy").astype("float32")
+T = Xtr.shape[1]
+
+device = torch.device("cpu")
+G, D = Gen(T).to(device), Disc(T).to(device)
+optG = torch.optim.Adam(G.parameters(), lr=2e-4)
+optD = torch.optim.Adam(D.parameters(), lr=2e-4)
+bce  = nn.BCEWithLogitsLoss()
+l1   = nn.L1Loss()
+
+train_ds = TensorDataset(torch.from_numpy(Xtr), torch.from_numpy(Ytr))
+val_ds   = TensorDataset(torch.from_numpy(Xva), torch.from_numpy(Yva))
+train_dl = DataLoader(train_ds, batch_size=128, shuffle=True)
+val_dl   = DataLoader(val_ds,   batch_size=256)
+
+EPOCHS = 30  # keep modest for CPU
+for ep in range(1, EPOCHS+1):
+    G.train(); D.train()
+    for xb, yb in train_dl:
+        xb, yb = xb.to(device), yb.to(device)
+
+        # --- Train D: real vs fake ---
+        optD.zero_grad()
+        real_logit = D(yb)
+        with torch.no_grad():
+            fake_y = G(xb)
+        fake_logit = D(fake_y.detach())
+        d_loss = bce(real_logit, torch.ones_like(real_logit)) + \
+                 bce(fake_logit, torch.zeros_like(fake_logit))
+        d_loss.backward(); optD.step()
+
+        # --- Train G: fool D + L1 to target (mask-agnostic here) ---
+        optG.zero_grad()
+        gen_y = G(xb)
+        g_adv = bce(D(gen_y), torch.ones_like(real_logit))
+        g_rec = l1(gen_y, yb)
+        g_loss = g_adv*0.3 + g_rec*0.7
+        g_loss.backward(); optG.step()
+
+    # simple val L1
+    G.eval()
+    with torch.no_grad():
+        vloss = 0.0; n=0
+        for xv, yv in val_dl:
+            xv, yv = xv.to(device), yv.to(device)
+            pr = G(xv); vloss += l1(pr,yv).item()*xv.size(0); n+=xv.size(0)
+        vloss/=n
+    print(f"Epoch {ep:02d} | val L1: {vloss:.4f}")
+
+# --- Apply to full image ---
+Y_FULL = "../../data/original.npy"; Y_GAP = "../../data/gapped.npy"
+y_gap = np.load(Y_GAP).astype("float32")   # (T,H,W)
+T,H,W = y_gap.shape
+Xall = y_gap.transpose(1,2,0).reshape(H*W, T)
+Xall = np.nan_to_num(Xall, nan=0.0).astype("float32")
+
+G.eval()
+with torch.no_grad():
+    preds = []
+    BS=512
+    for i in tqdm(range(0, Xall.shape[0], BS), desc="Reconstructing"):
+        xb = torch.from_numpy(Xall[i:i+BS]).to(device)
+        pr = G(xb).cpu().numpy()
+        preds.append(pr)
+    preds = np.concatenate(preds, axis=0)
+
+recon = preds.reshape(H, W, T).transpose(2,0,1)  # (T,H,W)
+np.save(f"{OUTDIR}/recon.npy", recon)
+print("✅ GAN reconstruction saved →", f"{OUTDIR}/recon.npy")
+
+
+
+run_dys_after_gan.py
+import numpy as np
+import os
+
+os.makedirs("../../results/DTS_GAN", exist_ok=True)
+
+# Load inputs
+y_true = np.load("../../data/original.npy")
+y_gap  = np.load("../../data/gapped.npy")
+y_dts  = np.load("../../results/DTS/recon1.npy")
+y_gan  = np.load("../../results/GAN/recon.npy")
+
+# Match time dimension
+min_T = min(y_true.shape[0], y_gap.shape[0], y_dts.shape[0], y_gan.shape[0])
+y_gap = y_gap[:min_T]
+y_dts = y_dts[:min_T]
+y_gan = y_gan[:min_T]
+
+# Identify missing values (gaps)
+mask = np.isnan(y_gap) | (y_gap == 0)
+
+# Fuse = DTS baseline + GAN replaced only where missing
+y_dts_gan = y_dts.copy()
+y_dts_gan[mask] = y_gan[mask]
+
+# Save final hybrid output
+np.save("../../results/DTS_GAN/recon.npy", y_dts_gan)
+print("✅ DTS+GAN Fusion Completed!")
+print("✅ Shape:", y_dts_gan.shape)

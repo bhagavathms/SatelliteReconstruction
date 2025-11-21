@@ -1,11 +1,12 @@
+# '''
 import numpy as np
 from scipy.interpolate import CubicSpline
 import os
 
 os.makedirs('../../results/Cubic', exist_ok=True)
 
-orig = np.load('../../data/original.npy')
-gap = np.load('../../data/gapped.npy')
+orig = np.load('../../data/original_h.npy')
+gap = np.load('../../data/gapped_h.npy')
 
 T, H, W = gap.shape
 rec = np.full_like(orig, np.nan)  # start with NaN
@@ -42,6 +43,10 @@ for i in range(H):
         except:
             continue  # Skip if curve fails
 
-np.save('../../results/Cubic/recon.npy', rec)
+np.save('../../results/Cubic/recon_h.npy', rec)
 print("✅ Improved Cubic Reconstruction saved!")
 print("Output shape:", rec.shape)
+# '''
+
+
+

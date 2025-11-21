@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import os
 
 # Load data
-y_original = np.load("../../data/original.npy")
-y_gap = np.load("../../data/gapped.npy")
-y_sg = np.load("../../results/SG/recon.npy")
+y_original = np.load("../../data/original_h.npy")
+y_gap = np.load("../../data/gapped_h.npy")
+y_sg = np.load("../../results/SG/recon_h.npy")
 
 # Choose pixel
-r, c = 50, 50
+r, c = 25, 30
 T = y_original.shape[0]
 
 plt.figure(figsize=(10,5))
@@ -23,7 +23,7 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 
-save_path = "../../results/SG/sg.png"
+save_path = "../../results/SG/sg_h.png"
 plt.savefig(save_path, dpi=300)
 plt.show()
 

@@ -6,8 +6,8 @@ import os
 os.makedirs("../../results/DTS", exist_ok=True)
 
 # 1) Load data (keep NaNs as NaNs)
-y_gap = np.load("../../data/gapped.npy")                 # (T, H, W)
-dates = np.load("../../data/dates.npy", allow_pickle=True).tolist()
+y_gap = np.load("../../data/gapped_h.npy")                 # (T, H, W)
+dates = np.load("../../data/dates_h.npy", allow_pickle=True).tolist()
 
 T, H, W = y_gap.shape
 
@@ -56,5 +56,5 @@ Y_at_obs = Y_daily[:, idx]         # (pixels, T) aligned with original cadence
 # 6) Back to (T, H, W)
 y_dts = columns_to_nd(Y_at_obs, T, H, W)
 
-np.save("../../results/DTS/recon1.npy", y_dts)
-print("✅ DTS (aligned to original timestamps) → ../../results/DTS/recon1.npy")
+np.save("../../results/DTS/recon_h.npy", y_dts)
+print("✅ DTS (aligned to original timestamps) → ../../results/DTS/recon_h.npy")
